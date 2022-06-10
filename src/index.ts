@@ -56,6 +56,8 @@ export class JSONDB {
         this.dobj.storage.put(idxID, id)
       }
     }
+    // TODO delete the `id` field and reconstrut it on queries/get ?
+    //  for now, we just include it as redundancy
     return this.dobj.storage.put(id, json)
   }
 
@@ -73,7 +75,7 @@ export class JSONDB {
     let subIDStart = '';
     let subIDEnd = '';
     // for now query each index in key order,
-    // TODO allow to specificy order for better optimization
+    // TODO allow to specificy order for better optimization, smaller number first
     for(const field of Object.keys(json)) {
       const value = json[field];
 
