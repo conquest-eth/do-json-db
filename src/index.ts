@@ -81,36 +81,41 @@ export class JSONDB {
     return this.storage.put(id, json)
   }
 
-  get(id: string) {
-    return this.storage.get(id);
+  get(id: string): Promise<JSONType | undefined> {
+    return this.storage.get<JSONType>(id);
   }
 
-  getFromType(typeName: string, subID: string) {
-    return this.storage.get(`:${typeName}:${subID}`);
+  getFromType(typeName: string, subID: string): Promise<JSONType | undefined> {
+    return this.storage.get<JSONType>(fullID(typeName, subID));
   }
 
   async query(typeName: string, json: JSONQuery) {
 
-    let items: {[key: string]:string} = {};
+    let items: {[key: string]:string} | undefined;
     let subIDStart = '';
     let subIDEnd = '';
     // for now query each index in key order,
     // TODO allow to specificy order for better optimization, smaller number first
     for(const field of Object.keys(json)) {
       const value = json[field];
+      console.log(`query field: ${field}`);
 
       // this is for equality
       // TODO implement gt and lt, etc..
 
       const prefix = indexID(typeName, getValueAsIDString(value), '');
+
       // TODO implement limit
       let keyValuePairs: Map<string, string>;
       if (subIDStart) {
-        keyValuePairs = await this.storage.list<string>({start: indexID(typeName, getValueAsIDString(value), subIDStart), end: indexID(typeName, getValueAsIDString(value), subIDEnd)});
+        console.log(`using subIDStart : ${subIDStart}`);
+        keyValuePairs = await this.storage.list<string>({start: indexID(typeName, getValueAsIDString(value), subIDStart), end: indexID(typeName, getValueAsIDString(value), subIDEnd) + ' '});
       } else {
+        console.log(`using prefix : ${prefix}`);
         keyValuePairs = await this.storage.list<string>({prefix});
       }
       if (keyValuePairs.size == 0) {
+        console.log(`nothing found`);
         return [];
       }
       const subIDs = Array.from(keyValuePairs.values());
@@ -119,26 +124,33 @@ export class JSONDB {
       const newItems: {[key: string]:string} = {};
       let len = 0;
       for (const subID of subIDs) {
-        if (items[subID]) {
+        if (!items || items[subID]) {
           newItems[subID] = subID;
           len ++;
         }
       }
+      items = newItems;
+
       if (len == 0) {
         return [];
-      } else {
-        items = newItems;
       }
     }
 
     const ids = [];
 
-    for(const key of Object.keys(items)) {
-      ids.push(fullID(typeName, key))
+    if (items) {
+      console.log(`keys: ${Object.keys(items).join(',')}`);
+      for(const key of Object.keys(items)) {
+        // TODO subIDs were needed above though to prefix
+        // ids.push(fullID(typeName, key))
+        // they are not subIDS
+        ids.push(key)
+      }
     }
 
     // TODO handle case where the number of ids to fetch exceed cloudflare worker api limit (128 keys at a time, see : https://developers.cloudflare.com/workers/runtime-apis/durable-objects/#transactional-storage-api)
-    return this.storage.get(ids);
+    const map = await this.storage.get(ids);
+    return Array.from(map.values());
   }
 
 }
