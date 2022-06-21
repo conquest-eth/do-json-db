@@ -1,6 +1,6 @@
 {
   "name": "do-json-db",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A DB for cloudflare worker using Durable Object key-value db to store and queries json objects",
   "author": "wighawag <wighawag@gmail.com>",
   "license": "MIT",
