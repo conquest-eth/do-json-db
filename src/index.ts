@@ -36,6 +36,7 @@ function fullID(typeName: string | undefined, subID: string) {
 }
 
 function indexID(typeName: string | undefined, valueInIDString: string, subID: string) {
+  // TODO add field name
   return ':' + typePrefix(typeName) + valueInIDString + ':' + subID;
 }
 
