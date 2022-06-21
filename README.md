@@ -1,4 +1,4 @@
-# worker-json-db
+# do-json-db
 
 A DB for cloudflare worker using Durable Object key-value db to store and queries json objects
 
