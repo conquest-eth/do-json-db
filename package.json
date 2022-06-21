@@ -1,5 +1,5 @@
 {
-  "name": "worker-json-db",
+  "name": "do-json-db",
   "version": "0.0.1",
   "description": "A DB for cloudflare worker using Durable Object key-value db to store and queries json objects",
   "author": "wighawag <wighawag@gmail.com>",
@@ -12,7 +12,14 @@
   "volta": {
     "node": "16.13.1"
   },
+  "type": "module",
   "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md"
+  ],
   "scripts": {
     "ts-node": "ts-node",
     "prepare": "node .setup.cjs",
