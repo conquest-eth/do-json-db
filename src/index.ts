@@ -1,13 +1,33 @@
-import {DurableObjectState} from '@cloudflare/workers-types';
-
-// needed because of : https://github.com/cloudflare/durable-objects-typescript-rollup-esm/issues/3
-type State = DurableObjectState & {blockConcurrencyWhile: (func: () => Promise<void>) => void};
-
 type JSONType = {id: string, typeName?: string} & {[field: string]: string | number};
 type JSONQuery = {[field: string]: string | number};
 
+type Storage = {
+  get<T = unknown>(
+    key: string,
+    options?: DurableObjectGetOptions
+  ): Promise<T | undefined>;
+  get<T = unknown>(
+    keys: string[],
+    options?: DurableObjectGetOptions
+  ): Promise<Map<string, T>>;
+  list<T = unknown>(
+    options?: DurableObjectListOptions
+  ): Promise<Map<string, T>>;
+  put<T>(
+    key: string,
+    value: T,
+    options?: DurableObjectPutOptions
+  ): Promise<void>;
+  put<T>(
+    entries: Record<string, T>,
+    options?: DurableObjectPutOptions
+  ): Promise<void>;
+  delete(key: string, options?: DurableObjectPutOptions): Promise<boolean>;
+  delete(keys: string[], options?: DurableObjectPutOptions): Promise<number>;
+  deleteAll(options?: DurableObjectPutOptions): Promise<void>;
+}
 
-function typePrefix(typeName: string) {
+function typePrefix(typeName: string | undefined) {
   return typeName ? `:${typeName}:`: '';
 }
 
@@ -36,7 +56,7 @@ function getValueAsIDString(value: string | number) {
 }
 
 export class JSONDB {
-  constructor(private dobj: State) {}
+  constructor(private storage: Storage) {}
 
   put(json: JSONType) {
     if(!json.id) {
@@ -53,25 +73,25 @@ export class JSONDB {
       } else {
         const value = json[field];
         const idxID = indexID(typeName, getValueAsIDString(value), json.id)
-        this.dobj.storage.put(idxID, id)
+        this.storage.put(idxID, id)
       }
     }
     // TODO delete the `id` field and reconstrut it on queries/get ?
     //  for now, we just include it as redundancy
-    return this.dobj.storage.put(id, json)
+    return this.storage.put(id, json)
   }
 
   get(id: string) {
-    return this.dobj.storage.get(id);
+    return this.storage.get(id);
   }
 
   getFromType(typeName: string, subID: string) {
-    return this.dobj.get(`:${typeName}:${subID}`);
+    return this.storage.get(`:${typeName}:${subID}`);
   }
 
   async query(typeName: string, json: JSONQuery) {
 
-    let items = {};
+    let items: {[key: string]:string} = {};
     let subIDStart = '';
     let subIDEnd = '';
     // for now query each index in key order,
@@ -84,19 +104,19 @@ export class JSONDB {
 
       const prefix = indexID(typeName, getValueAsIDString(value), '');
       // TODO implement limit
-      let keyValuePairs;
+      let keyValuePairs: Map<string, string>;
       if (subIDStart) {
-        keyValuePairs = await this.dobj.storage.list({start: indexID(typeName, getValueAsIDString(value), subIDStart), end: indexID(typeName, getValueAsIDString(value), subIDEnd)});
+        keyValuePairs = await this.storage.list<string>({start: indexID(typeName, getValueAsIDString(value), subIDStart), end: indexID(typeName, getValueAsIDString(value), subIDEnd)});
       } else {
-        keyValuePairs = await this.dobj.storage.list({prefix});
+        keyValuePairs = await this.storage.list<string>({prefix});
       }
-      if (keyValuePairs.size() == 0) {
+      if (keyValuePairs.size == 0) {
         return [];
       }
-      const subIDs = keyValuePairs.values();
+      const subIDs = Array.from(keyValuePairs.values());
       subIDStart = subIDs[0];
       subIDEnd = subIDs[subIDs.length-1];
-      const newItems = {};
+      const newItems: {[key: string]:string} = {};
       let len = 0;
       for (const subID of subIDs) {
         if (items[subID]) {
@@ -118,7 +138,7 @@ export class JSONDB {
     }
 
     // TODO handle case where the number of ids to fetch exceed cloudflare worker api limit (128 keys at a time, see : https://developers.cloudflare.com/workers/runtime-apis/durable-objects/#transactional-storage-api)
-    return this.dobj.storage.get(ids);
+    return this.storage.get(ids);
   }
 
 }
