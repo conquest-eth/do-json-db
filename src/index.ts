@@ -59,7 +59,7 @@ function getValueAsIDString(value: string | number) {
 export class JSONDB {
   constructor(private storage: Storage) {}
 
-  put(json: JSONType) {
+  async put(json: JSONType) {
     if(!json.id) {
       throw new Error(`no id provided`);
     } else if(json.id.indexOf(':') !== -1) {
@@ -67,6 +67,7 @@ export class JSONDB {
     }
     let typeName = json.typeName;
     let id = fullID(typeName, json.id);
+    const existing = await this.get(id)
 
     for(const field of Object.keys(json)) {
       if (field === 'id' || field === 'typeName' || field.startsWith('_') || field.startsWith(':')) {
@@ -74,7 +75,14 @@ export class JSONDB {
       } else {
         const value = json[field];
         const idxID = indexID(typeName, getValueAsIDString(value), json.id)
-        this.storage.put(idxID, id)
+        if (!existing) {
+          this.storage.put(idxID, id)
+        } else if (existing[field] !== value) {
+          const existing_idxID = indexID(typeName, getValueAsIDString(existing[field]), json.id)
+          this.storage.delete(existing_idxID);
+          this.storage.put(idxID, id);
+        }
+
       }
     }
     // TODO delete the `id` field and reconstrut it on queries/get ?
