@@ -28,7 +28,6 @@ function copyFileSync( source, target ) {
 
 function copyFolderRecursiveSync( source, target ) {
   var files = [];
-  console.log({target})
   if (!fs.existsSync(target) ) {
     fs.mkdirSync(target, {recursive: true});
   }
@@ -48,4 +47,6 @@ function copyFolderRecursiveSync( source, target ) {
 if (fs.existsSync(destination)) {
   fs.rmSync(destination, {recursive: true});
 }
-copyFolderRecursiveSync(path.join(__dirname, '../src/'), destination)
+fs.mkdirSync(destination, {recursive: true});
+fs.copyFileSync(path.join(__dirname, '../tsconfig.json'), path.join(destination, 'tsconfig.json'));
+copyFolderRecursiveSync(path.join(__dirname, '../src/'), path.join(destination, 'src'));
