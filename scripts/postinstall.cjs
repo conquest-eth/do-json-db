@@ -1,6 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 
+// let logs = '';
+// const console = {
+//   log(message) {
+//     logs += `\n` + message;
+//     fs.writeFileSync('log.txt', logs);
+//   },
+//   error(message) {
+//     logs += `\nERRROR: ` + message;
+//     fs.writeFileSync('log.txt', logs);
+//   }
+// }
+
 const root = path.parse(process.cwd()).root;
 
 function getPackageJSONPath(startPath) {
@@ -98,7 +110,7 @@ if (!filepath) {
       );
       process.exit(1);
     }
-    const currentPackage = process.env['npm_config_dir'];
+    const currentPackage = process.env['npm_config_dir'] || process.cwd();
     if (!currentPackage) {
       // console.log('no config_dir')
       process.exit(0);
@@ -123,6 +135,6 @@ if (!filepath) {
     // console.log({source, destination});
     copy(destination);
   } else {
-    // console.error(`typescriptLibraries not set`)
+    console.error(`typescriptLibraries not set`)
   }
 }
