@@ -1,6 +1,6 @@
 {
   "name": "do-json-db",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A DB for cloudflare worker using Durable Object key-value db to store and queries json objects",
   "author": "wighawag <wighawag@gmail.com>",
   "license": "MIT",
@@ -17,15 +17,14 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "files": [
+    "scripts/postinstall.cjs",
     "dist/**/*",
     "src/**/*",
     "tsconfig.json",
     "README.md"
   ],
-  "bin": {
-    "do-json-db-copy-sources": "scripts/install.cjs"
-  },
   "scripts": {
+    "postinstall": "node scripts/postinstall.cjs",
     "ts-node": "ts-node",
     "prepare": "node .setup.cjs",
     "build:cjs": "node build.cjs",
@@ -52,5 +51,6 @@
   },
   "dependencies": {
     "ethers": "^5.4.4"
-  }
+  },
+  "typescriptLibraries": "libs"
 }
